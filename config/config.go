@@ -35,6 +35,8 @@ func ParseConfig(cfgFile string) (*Config, error) {
 
 // Config is the coriolis-ovm-exporter config
 type Config struct {
+	// DBFile is the path on disk to the database location
+	DBFile    string    `toml:"db_file"`
 	APIServer APIServer `toml:"api"`
 }
 

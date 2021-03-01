@@ -125,3 +125,20 @@ func GetRepo(repoID string) (Repo, error) {
 
 	return Repo{}, fmt.Errorf("could not find repo %s", repoID)
 }
+
+// ReposAsMap returns a map of repos with the ID of the repo as
+// a map key.
+func ReposAsMap() (map[string]Repo, error) {
+	repos, err := ParseRepos()
+	if err != nil {
+		return nil, err
+	}
+
+	ret := map[string]Repo{}
+
+	for _, val := range repos {
+		ret[val.ID] = val
+	}
+
+	return ret, nil
+}

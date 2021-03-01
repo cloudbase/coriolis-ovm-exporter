@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 
-	"coriolis-ovm-exporter/config"
 	"coriolis-ovm-exporter/internal"
 	"coriolis-ovm-exporter/storage"
 )
@@ -18,6 +17,8 @@ const (
 var (
 	filename = flag.String("filepath", "", "path to file")
 	dest     = flag.String("dest", "", "path to destination")
+
+	vmID = flag.String("vmid", "", "VM ID to snapshot")
 )
 
 type deviceInfo struct {
@@ -52,24 +53,24 @@ func findDev(major, minor uint64) (deviceInfo, error) {
 	return deviceInfo{}, fmt.Errorf("device not found")
 }
 
-func fibmapTest() {
-	flag.Parse()
+// func fibmapTest() {
+// 	flag.Parse()
 
-	if *filename == "" {
-		flag.PrintDefaults()
-		return
-	}
+// 	if *filename == "" {
+// 		flag.PrintDefaults()
+// 		return
+// 	}
 
-	ext, err := internal.GetExtents(*filename)
-	if err != nil {
-		fmt.Printf("Error getting extents: %q\n", err)
-		return
-	}
+// 	ext, err := internal.GetExtents(*filename)
+// 	if err != nil {
+// 		fmt.Printf("Error getting extents: %q\n", err)
+// 		return
+// 	}
 
-	ee, err2 := json.MarshalIndent(ext, "", "  ")
-	fmt.Println(string(ee), err2)
-	fmt.Printf("total extents: %d\n", len(ext))
-}
+// 	ee, err2 := json.MarshalIndent(ext, "", "  ")
+// 	fmt.Println(string(ee), err2)
+// 	fmt.Printf("total extents: %d\n", len(ext))
+// }
 
 func reflinkTest() {
 	flag.Parse()
@@ -78,24 +79,46 @@ func reflinkTest() {
 		flag.PrintDefaults()
 		return
 	}
-	if err := internal.IOctlOCFS2Reflink(filename, dest); err != nil {
+	if err := internal.IOctlOCFS2Reflink(*filename, *dest); err != nil {
 		fmt.Printf("Error creating reflink: %q\n", err)
 		return
 	}
 }
 
 func main() {
-	cfg := config.Config{
-		APIServer: config.APIServer{
-			Bind: "0.0.0.0",
-			Port: 5544,
-			TLSConfig: config.TLSConfig{
-				CACert: "/home/gabriel/keys/ca-pub.pem",
-				Cert:   "/home/gabriel/keys/srv-pub.pem",
-				Key:    "/home/gabriel/keys/srv-key.pem",
-			},
-		},
+	// reflinkTest()
+	flag.Parse()
+
+	if *vmID == "" {
+		flag.PrintDefaults()
+		return
 	}
+
+	vm, err := internal.GetVM(*vmID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	snap, err := vm.CreateSnapshot(false)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	mm, err := json.MarshalIndent(snap, "", "  ")
+	fmt.Println(string(mm), err)
+
+	// cfg := config.Config{
+	// 	APIServer: config.APIServer{
+	// 		Bind: "0.0.0.0",
+	// 		Port: 5544,
+	// 		TLSConfig: config.TLSConfig{
+	// 			CACert: "/home/gabriel/keys/ca-pub.pem",
+	// 			Cert:   "/home/gabriel/keys/srv-pub.pem",
+	// 			Key:    "/home/gabriel/keys/srv-key.pem",
+	// 		},
+	// 	},
+	// }
 
 	// repo := config.Repo{
 	// 	Name:     "bogus",
@@ -112,31 +135,32 @@ func main() {
 	// cfg.Repos = append(cfg.Repos, repo)
 	// cfg.Repos = append(cfg.Repos, repo2)
 
-	if err := cfg.Dump("/tmp/demo.toml"); err != nil {
-		fmt.Println(err)
-	}
+	// if err := cfg.Dump("/tmp/demo.toml"); err != nil {
+	// 	fmt.Println(err)
+	// }
 
-	vms, err := internal.ListAllVMs()
+	// vms, err := internal.ListAllVMs()
 
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
 
-	for _, vm := range vms {
-		disks, err := vm.Disks()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+	// for _, vm := range vms {
+	// 	disks, err := vm.Disks()
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		return
+	// 	}
 
-		dd, err := json.MarshalIndent(disks, "", "  ")
-		fmt.Println(string(dd), err)
+	// 	dd, err := json.MarshalIndent(disks, "", "  ")
+	// 	fmt.Println(string(dd), err)
 
-		for _, disk := range disks {
-			fmt.Println(disk.CanClone())
-		}
-	}
+	// 	for _, disk := range disks {
+	// 		fmt.Println(disk.CanClone())
+	// 	}
+	// }
+
 	// vv, err := json.MarshalIndent(vms, "", "  ")
 	// fmt.Println(string(vv), err)
 
@@ -154,7 +178,6 @@ func main() {
 	// mm, err := json.MarshalIndent(repos, "", "  ")
 	// fmt.Println(string(mm), err)
 	// fibmapTest()
-	// reflinkTest()
 
 	// finfo, err := fd.Stat()
 	// if err != nil {
