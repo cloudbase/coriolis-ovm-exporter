@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
@@ -16,8 +17,15 @@ const (
 	// DefaultConfigFile is the default path to the OVM exporter config
 	DefaultConfigFile = "/etc/coriolis-ovm-exporter/config.toml"
 
+	// DefaultDBFile is the default location for the DB file.
+	DefaultDBFile = "/etc/coriolis-ovm-exporter/exporter.db"
+
 	// DefaultListenPort is the default HTTPS listen port
 	DefaultListenPort = 5544
+
+	// DefaultJWTTTL is the default duration in seconds a JWT token
+	// will be valid. Default 7 days.
+	DefaultJWTTTL time.Duration = 168 * time.Hour
 )
 
 // ParseConfig parses the file passed in as cfgFile and returns
@@ -27,6 +35,15 @@ func ParseConfig(cfgFile string) (*Config, error) {
 	if _, err := toml.DecodeFile(cfgFile, &config); err != nil {
 		return nil, errors.Wrap(err, "decoding toml")
 	}
+
+	if config.DBFile == "" {
+		config.DBFile = DefaultDBFile
+	}
+
+	if config.JWTAuth.TimeToLive.Duration == 0 {
+		config.JWTAuth.TimeToLive.Duration = DefaultJWTTTL
+	}
+
 	if err := config.Validate(); err != nil {
 		return nil, errors.Wrap(err, "validating config")
 	}
@@ -36,12 +53,47 @@ func ParseConfig(cfgFile string) (*Config, error) {
 // Config is the coriolis-ovm-exporter config
 type Config struct {
 	// DBFile is the path on disk to the database location
-	DBFile    string    `toml:"db_file"`
+	DBFile string `toml:"db_file"`
+	// OVMEndpoint is the API endpoint of the OVM manager.
+	// We use this to authenticate client requests to the exporter.
+	OVMEndpoint string `toml:"ovm_endpoint"`
+
+	// APIServer is the api server configuration.
 	APIServer APIServer `toml:"api"`
+
+	// JWTAuth is the jwt config.
+	JWTAuth JWTAuth `toml:"jwt"`
 }
 
 // Validate validates the config options
 func (c *Config) Validate() error {
+	return nil
+}
+
+type duration struct {
+	time.Duration
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(text))
+	if err != nil {
+		return errors.Wrap(err, "parsing time_to_live")
+	}
+	return nil
+}
+
+// JWTAuth holds the jwt config.
+type JWTAuth struct {
+	Secret     string   `toml:"secret"`
+	TimeToLive duration `toml:"time_to_live"`
+}
+
+// Validate validates the JWT config.
+func (j *JWTAuth) Validate() error {
+	if j.Secret == "" {
+		return fmt.Errorf("missing jwt secret")
+	}
 	return nil
 }
 
