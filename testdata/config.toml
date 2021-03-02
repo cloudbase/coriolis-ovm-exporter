@@ -1,0 +1,13 @@
+db_file = "/tmp/exporter.db"
+ovm_endpoint = "https://10.107.1.244:7002"
+
+[jwt]
+secret = "yoidthOcBauphFeykCotdidNorjAnAtGhonsabShegAtfexbavlyakPak4SletEd"
+
+[api]
+bind = "0.0.0.0"
+port = 5544
+    [api.tls]
+    certificate = "/tmp/certs/srv-pub.pem"
+    key = "/tmp/certs/srv-key.pem"
+    ca_certificate = "/tmp/certs/ca-pub.pem"

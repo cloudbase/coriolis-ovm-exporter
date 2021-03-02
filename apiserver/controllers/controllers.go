@@ -39,6 +39,10 @@ func (a *APIController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 func (a *APIController) ListVMsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
+// GetVMHandler gets information about a single VM.
+func (a *APIController) GetVMHandler(w http.ResponseWriter, r *http.Request) {
+}
+
 // ListSnapshotsHandler lists all snapshots for a VM.
 func (a *APIController) ListSnapshotsHandler(w http.ResponseWriter, r *http.Request) {
 }
@@ -55,6 +59,10 @@ func (a *APIController) DeleteSnapshotHandler(w http.ResponseWriter, r *http.Req
 
 // PurgeSnapshotsHandler deletes all snapshots associated with a VM.
 func (a *APIController) PurgeSnapshotsHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// CreateSnapshotHandler creates a snapshots for a VM.
+func (a *APIController) CreateSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ConsumeSnapshotHandler allows the caller to download arbitrary ranges of disk data from a

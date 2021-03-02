@@ -26,5 +26,25 @@ func NewAPIRouter(han *controllers.APIController, authMiddleware auth.Middleware
 	apiRouter := apiSubRouter.PathPrefix("").Subrouter()
 	apiRouter.Use(authMiddleware.Middleware)
 
+	// list VMs
+	apiRouter.Handle("/{vms:vms\\/?}", log(os.Stdout, http.HandlerFunc(han.ListVMsHandler))).Methods("GET")
+	// get VM
+	apiRouter.Handle("/vms/{vmID}", log(os.Stdout, http.HandlerFunc(han.GetVMHandler))).Methods("GET")
+	// list VM snapshots
+	apiRouter.Handle("/vms/{vmID}/snapshots", log(os.Stdout, http.HandlerFunc(han.ListSnapshotsHandler))).Methods("GET")
+	apiRouter.Handle("/vms/{vmID}/snapshots/", log(os.Stdout, http.HandlerFunc(han.ListSnapshotsHandler))).Methods("GET")
+	// delete all VM snapshots
+	apiRouter.Handle("/vms/{vmID}/snapshots", log(os.Stdout, http.HandlerFunc(han.PurgeSnapshotsHandler))).Methods("DELETE")
+	apiRouter.Handle("/vms/{vmID}/snapshots/", log(os.Stdout, http.HandlerFunc(han.PurgeSnapshotsHandler))).Methods("DELETE")
+	// create VM snapshot
+	apiRouter.Handle("/vms/{vmID}/snapshots", log(os.Stdout, http.HandlerFunc(han.CreateSnapshotHandler))).Methods("POST")
+	apiRouter.Handle("/vms/{vmID}/snapshots/", log(os.Stdout, http.HandlerFunc(han.CreateSnapshotHandler))).Methods("POST")
+	// get VM snapshot
+	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}", log(os.Stdout, http.HandlerFunc(han.GetSnapshotHandler))).Methods("GET")
+	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}/", log(os.Stdout, http.HandlerFunc(han.GetSnapshotHandler))).Methods("GET")
+	// delete VM snapshot
+	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}", log(os.Stdout, http.HandlerFunc(han.DeleteSnapshotHandler))).Methods("DELETE")
+	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}/", log(os.Stdout, http.HandlerFunc(han.DeleteSnapshotHandler))).Methods("DELETE")
+
 	return router
 }

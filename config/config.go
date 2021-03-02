@@ -67,6 +67,22 @@ type Config struct {
 
 // Validate validates the config options
 func (c *Config) Validate() error {
+	if c.DBFile == "" {
+		return fmt.Errorf("missing db_file")
+	}
+
+	if c.OVMEndpoint == "" {
+		return fmt.Errorf("missing ovm_endpoint")
+	}
+
+	if err := c.APIServer.Validate(); err != nil {
+		return errors.Wrap(err, "validating api server section")
+	}
+
+	if err := c.JWTAuth.Validate(); err != nil {
+		return errors.Wrap(err, "validating jwt section")
+	}
+
 	return nil
 }
 
@@ -103,6 +119,11 @@ type APIServer struct {
 	Bind      string    `toml:"bind"`
 	Port      int       `toml:"port"`
 	TLSConfig TLSConfig `toml:"tls"`
+}
+
+// BindAddress returns a host:port string.
+func (a *APIServer) BindAddress() string {
+	return fmt.Sprintf("%s:%d", a.Bind, a.Port)
 }
 
 // Validate validates the API server config
@@ -158,7 +179,6 @@ func (t *TLSConfig) TLSConfig() (*tls.Config, error) {
 	}
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    roots,
 	}, nil
 }

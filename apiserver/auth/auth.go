@@ -21,8 +21,8 @@ type jwtMiddleware struct {
 	cfg *config.JWTAuth
 }
 
-// NewjwtMiddleware returns a populated jwtMiddleware
-func NewjwtMiddleware(cfg *config.JWTAuth) (Middleware, error) {
+// NewJWTMiddleware returns a populated jwtMiddleware
+func NewJWTMiddleware(cfg *config.JWTAuth) (Middleware, error) {
 	return &jwtMiddleware{
 		cfg: cfg,
 	}, nil
