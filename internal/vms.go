@@ -79,23 +79,16 @@ func (d Disk) CreateSnapshot(snapID string) (snap DiskSnapshot, err error) {
 			}
 		}
 	}()
+
 	log.Printf("Creating snap of %s to %s", d.Path, snapFile)
+
 	if err := IOctlOCFS2Reflink(d.Path, snapFile); err != nil {
 		return DiskSnapshot{}, errors.Wrap(err, "creating reflink")
 	}
 
-	extents, err := GetExtents(snapFile)
+	chunks, err := getFileExtents(snapFile)
 	if err != nil {
-		return DiskSnapshot{}, errors.Wrap(err, "fetching fiemap")
-	}
-
-	chunks := make([]Chunk, len(extents))
-
-	for idx, ext := range extents {
-		chunks[idx] = Chunk{
-			Start:  ext.Logical,
-			Length: ext.Length,
-		}
+		return DiskSnapshot{}, err
 	}
 
 	snap = DiskSnapshot{

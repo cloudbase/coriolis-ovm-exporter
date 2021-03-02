@@ -108,6 +108,11 @@ func main() {
 	mm, err := json.MarshalIndent(snap, "", "  ")
 	fmt.Println(string(mm), err)
 
+	if err := snap.Delete(); err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	// cfg := config.Config{
 	// 	APIServer: config.APIServer{
 	// 		Bind: "0.0.0.0",

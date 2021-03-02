@@ -30,8 +30,6 @@ func IOctlOCFS2Reflink(src, dst string) error {
 		Preserve: 1,
 	}
 
-	fmt.Println(params)
-
 	fd, err := os.Open(srcCopy)
 	if err != nil {
 		return errors.Wrap(err, "opening file")
