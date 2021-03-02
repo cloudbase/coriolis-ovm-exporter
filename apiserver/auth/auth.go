@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"coriolis-ovm-exporter/apiserver/params"
 	"coriolis-ovm-exporter/config"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -32,7 +33,7 @@ func invalidAuthResponse(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(
-		APIErrorResponse{
+		params.APIErrorResponse{
 			Error:   "Authentication failed",
 			Details: "Invalid authentication token",
 		})

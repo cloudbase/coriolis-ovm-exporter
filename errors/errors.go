@@ -6,6 +6,17 @@ package errors
 import "fmt"
 
 var (
+	// ErrUnauthorized is returned when a user does not have
+	// authorization to perform a request
+	ErrUnauthorized = NewUnauthorizedError("Unauthorized")
+	// ErrNotFound is returned if an object is not found in
+	// the database.
+	ErrNotFound = NewNotFoundError("not found")
+	// ErrInvalidSession is returned when a session is invalid
+	ErrInvalidSession = NewInvalidSessionError("invalid session")
+	// ErrBadRequest is returned is a malformed request is sent
+	ErrBadRequest = NewBadRequestError("invalid request")
+
 	// ErrNoInfo is returned when no info could be found about a resource
 	ErrNoInfo = fmt.Errorf("no info available")
 )
@@ -87,4 +98,82 @@ func IsOperationInterrupted(err error) bool {
 
 	_, ok := err.(*ErrOperationInterrupted)
 	return ok
+}
+
+type baseError struct {
+	msg string
+}
+
+func (b *baseError) Error() string {
+	return b.msg
+}
+
+// NewUnauthorizedError returns a new UnauthorizedError
+func NewUnauthorizedError(msg string) error {
+	return &UnauthorizedError{
+		baseError{
+			msg: msg,
+		},
+	}
+}
+
+// UnauthorizedError is returned when a request is unauthorized
+type UnauthorizedError struct {
+	baseError
+}
+
+// NewNotFoundError returns a new NotFoundError
+func NewNotFoundError(msg string) error {
+	return &NotFoundError{
+		baseError{
+			msg: msg,
+		},
+	}
+}
+
+// NotFoundError is returned when a resource is not found
+type NotFoundError struct {
+	baseError
+}
+
+// NewInvalidSessionError returns a new InvalidSessionError
+func NewInvalidSessionError(msg string) error {
+	return &InvalidSessionError{
+		baseError{
+			msg: msg,
+		},
+	}
+}
+
+// InvalidSessionError is returned when a session is invalid
+type InvalidSessionError struct {
+	baseError
+}
+
+// NewBadRequestError returns a new BadRequestError
+func NewBadRequestError(msg string, a ...interface{}) error {
+	return &BadRequestError{
+		baseError{
+			msg: fmt.Sprintf(msg, a...),
+		},
+	}
+}
+
+// BadRequestError is returned when a malformed request is received
+type BadRequestError struct {
+	baseError
+}
+
+// NewConflictError returns a new ConflictError
+func NewConflictError(msg string, a ...interface{}) error {
+	return &ConflictError{
+		baseError{
+			msg: fmt.Sprintf(msg, a...),
+		},
+	}
+}
+
+// ConflictError is returned when a conflicting request is made
+type ConflictError struct {
+	baseError
 }

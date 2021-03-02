@@ -7,6 +7,7 @@ require (
 	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/Sereal/Sereal v0.0.0-20200820125258-a016b7cda3f3 // indirect
 	github.com/asdine/storm v2.1.2+incompatible
+	github.com/dbgeek/go-ovm-helper v0.0.0-20180203213650-4a0fa1c4f53c
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.3 // indirect

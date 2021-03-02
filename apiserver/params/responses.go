@@ -1,4 +1,9 @@
-package auth
+package params
+
+// LoginResponse is the response clients get on successful login.
+type LoginResponse struct {
+	Token string `json:"token"`
+}
 
 // ErrorResponse holds any errors generated during
 // a request
