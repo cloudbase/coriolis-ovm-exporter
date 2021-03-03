@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -236,4 +238,48 @@ func (a *APIController) CreateSnapshotHandler(w http.ResponseWriter, r *http.Req
 // ConsumeSnapshotHandler allows the caller to download arbitrary ranges of disk data from a
 // disk snapshot.
 func (a *APIController) ConsumeSnapshotHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	snapID, ok := vars["snapshotID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	diskID, ok := vars["diskID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	snapshot, err := a.mgr.GetSnapshot(vmID, snapID, "", false)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	var disk params.DiskSnapshot
+	for _, val := range snapshot.Disks {
+		if val.Name == diskID {
+			disk = val
+		}
+	}
+
+	if disk.Name == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	fp, err := os.Open(disk.Path)
+	if err != nil {
+		log.Printf("failed open snapshot file: %q", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer fp.Close()
+	http.ServeContent(w, r, disk.Path, time.Time{}, fp)
 }

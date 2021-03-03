@@ -47,6 +47,9 @@ func NewAPIRouter(han *controllers.APIController, authMiddleware auth.Middleware
 	// delete VM snapshot
 	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}", log(os.Stdout, http.HandlerFunc(han.DeleteSnapshotHandler))).Methods("DELETE")
 	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}/", log(os.Stdout, http.HandlerFunc(han.DeleteSnapshotHandler))).Methods("DELETE")
+	// Read snapshotted disk
+	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}/disks/{diskID}", log(os.Stdout, http.HandlerFunc(han.ConsumeSnapshotHandler))).Methods("GET")
+	apiRouter.Handle("/vms/{vmID}/snapshots/{snapshotID}/disks/{diskID}/", log(os.Stdout, http.HandlerFunc(han.ConsumeSnapshotHandler))).Methods("GET")
 
 	return router
 }

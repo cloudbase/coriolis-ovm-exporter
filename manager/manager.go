@@ -6,7 +6,6 @@ import (
 	"coriolis-ovm-exporter/db"
 	gErrors "coriolis-ovm-exporter/errors"
 	"coriolis-ovm-exporter/internal"
-	"fmt"
 	"log"
 
 	"github.com/asdine/storm"
@@ -172,7 +171,6 @@ func (s *SnapshotManager) squashChunks(disks []params.DiskSnapshot) []params.Dis
 
 func (s *SnapshotManager) dbSnapToParamsSnapshots(snap db.Snapshot, squashChunks bool) params.VMSnapshot {
 	var disks []params.DiskSnapshot
-	fmt.Println(squashChunks)
 	if squashChunks == true {
 		disks = s.squashChunks(snap.Disks)
 	} else {
