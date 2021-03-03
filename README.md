@@ -19,7 +19,10 @@ The configuration file is quite simple:
 ```toml
 # Path on disk to the database file the exporter will use.
 db_file = "/etc/coriolis-ovm-exporter/exporter.db"
-# This is the base URL to your OVM manager
+
+# This is the base URL to your OVM manager. We will use this to
+# authenticate login requests. Make sure this matches the manager
+# that this node belongs to.
 ovm_endpoint = "https://your-ovm-api-server.example:7002"
 
 [jwt]
@@ -35,3 +38,7 @@ port = 5544
     key = "/tmp/certs/srv-key.pem"
     ca_certificate = "/tmp/certs/ca-pub.pem"
 ```
+
+## Usage
+
+There is an example python client in the ```examples``` folder. Proper documentation will be added soon.
