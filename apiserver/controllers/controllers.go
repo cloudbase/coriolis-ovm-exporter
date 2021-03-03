@@ -130,6 +130,19 @@ func (a *APIController) GetVMHandler(w http.ResponseWriter, r *http.Request) {
 
 // ListSnapshotsHandler lists all snapshots for a VM.
 func (a *APIController) ListSnapshotsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	snaps, err := a.mgr.ListSnapshots(vmID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	json.NewEncoder(w).Encode(snaps)
 }
 
 // GetSnapshotHandler gets information about a single snapshot for a VM. It takes an optional
@@ -156,7 +169,9 @@ func (a *APIController) GetSnapshotHandler(w http.ResponseWriter, r *http.Reques
 	} else {
 		squashChunks, _ = strconv.ParseBool(squashChunksParam)
 	}
-	snapshot, err := a.mgr.GetSnapshot(vmID, snapID, squashChunks)
+
+	compareTo := r.URL.Query().Get("compareTo")
+	snapshot, err := a.mgr.GetSnapshot(vmID, snapID, compareTo, squashChunks)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -188,6 +203,16 @@ func (a *APIController) DeleteSnapshotHandler(w http.ResponseWriter, r *http.Req
 
 // PurgeSnapshotsHandler deletes all snapshots associated with a VM.
 func (a *APIController) PurgeSnapshotsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err := a.mgr.PurgeSnapshots(vmID); err != nil {
+		handleError(w, err)
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // CreateSnapshotHandler creates a snapshots for a VM.

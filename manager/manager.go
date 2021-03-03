@@ -6,6 +6,7 @@ import (
 	"coriolis-ovm-exporter/db"
 	gErrors "coriolis-ovm-exporter/errors"
 	"coriolis-ovm-exporter/internal"
+	"fmt"
 	"log"
 
 	"github.com/asdine/storm"
@@ -154,20 +155,26 @@ func (s *SnapshotManager) CreateSnapshot(vmid string) (snap params.VMSnapshot, e
 	return snapshotParams, nil
 }
 
+func (s *SnapshotManager) squashChunks(disks []params.DiskSnapshot) []params.DiskSnapshot {
+	ret := make([]params.DiskSnapshot, len(disks))
+	for idx, disk := range disks {
+		ret[idx] = params.DiskSnapshot{
+			ParentPath: disk.ParentPath,
+			Path:       disk.Path,
+			SnapshotID: disk.SnapshotID,
+			Chunks:     internal.SquashChunks(disk.Chunks),
+			Name:       disk.Name,
+			Repo:       disk.Repo,
+		}
+	}
+	return ret
+}
+
 func (s *SnapshotManager) dbSnapToParamsSnapshots(snap db.Snapshot, squashChunks bool) params.VMSnapshot {
 	var disks []params.DiskSnapshot
-	if squashChunks {
-		disks = make([]params.DiskSnapshot, len(snap.Disks))
-		for idx, disk := range snap.Disks {
-			disks[idx] = params.DiskSnapshot{
-				ParentPath: disk.ParentPath,
-				Path:       disk.Path,
-				SnapshotID: disk.SnapshotID,
-				Chunks:     internal.SquashChunks(disk.Chunks),
-				Name:       disk.Name,
-				Repo:       disk.Repo,
-			}
-		}
+	fmt.Println(squashChunks)
+	if squashChunks == true {
+		disks = s.squashChunks(snap.Disks)
 	} else {
 		disks = snap.Disks
 	}
@@ -190,13 +197,103 @@ func (s *SnapshotManager) getSnapshot(vmID, snapID string) (db.Snapshot, error) 
 	return snap, nil
 }
 
+func (s *SnapshotManager) compareChunks(first, second []params.Chunk) []params.Chunk {
+	var ret []params.Chunk
+	for _, val := range first {
+		var found bool = false
+		for _, prevVal := range second {
+			if val.Physical == prevVal.Physical {
+				if val.Start == prevVal.Start && val.Length == prevVal.Length {
+					found = true
+					break
+				}
+			}
+		}
+		// This is a new extent. Add it to the list.
+		if !found {
+			ret = append(ret, val)
+		}
+	}
+	return ret
+}
+
+func (s *SnapshotManager) getDiffSnapshot(snap, compareTo db.Snapshot) (db.Snapshot, error) {
+	if !compareTo.CreatedAt.Before(snap.CreatedAt) {
+		return db.Snapshot{}, gErrors.NewBadRequestError(
+			"compareTo snapshot must be older than this snapshot")
+	}
+
+	if snap.VMID != compareTo.VMID {
+		return db.Snapshot{}, gErrors.NewBadRequestError(
+			"compareTo snapshot does not belong to this VM")
+	}
+
+	newDisks := make([]params.DiskSnapshot, len(snap.Disks))
+
+	for idx, disk := range snap.Disks {
+		var chunks []params.Chunk = disk.Chunks
+		for _, compareDisk := range compareTo.Disks {
+			if compareDisk.Name == disk.Name {
+				chunks = s.compareChunks(disk.Chunks, compareDisk.Chunks)
+				break
+			}
+		}
+		newDisks[idx] = params.DiskSnapshot{
+			ParentPath: disk.ParentPath,
+			Path:       disk.Path,
+			SnapshotID: disk.SnapshotID,
+			Chunks:     chunks,
+			Name:       disk.Name,
+			Repo:       disk.Repo,
+		}
+	}
+	// TODO: should we copy the values?
+	snap.Disks = newDisks
+	return snap, nil
+}
+
 // GetSnapshot fetches information about a snapshot.
-func (s *SnapshotManager) GetSnapshot(vmID, snapID string, squashChunks bool) (params.VMSnapshot, error) {
-	snap, err := s.getSnapshot(vmID, snapID)
+func (s *SnapshotManager) GetSnapshot(vmID, snapID, compareTo string, squashChunks bool) (params.VMSnapshot, error) {
+	var snap db.Snapshot
+	var err error
+
+	requestedSnap, err := s.getSnapshot(vmID, snapID)
 	if err != nil {
 		return params.VMSnapshot{}, errors.Wrap(err, "fetching snapshot")
 	}
+
+	var compareToSnap db.Snapshot
+	if compareTo != "" {
+		compareToSnap, err = s.getSnapshot(vmID, compareTo)
+		if err != nil {
+			return params.VMSnapshot{}, err
+		}
+		snap, err = s.getDiffSnapshot(requestedSnap, compareToSnap)
+		if err != nil {
+			return params.VMSnapshot{}, err
+		}
+	} else {
+		snap = requestedSnap
+	}
 	return s.dbSnapToParamsSnapshots(snap, squashChunks), nil
+}
+
+// ListSnapshots lists all snapshots for a VM
+func (s *SnapshotManager) ListSnapshots(vmID string) ([]params.VMSnapshot, error) {
+	vm, err := s.GetVirtualMachine(vmID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]params.VMSnapshot, len(vm.Snapshots))
+	for idx, snap := range vm.Snapshots {
+		retSnap, err := s.GetSnapshot(vmID, snap, "", true)
+		if err != nil {
+			return nil, err
+		}
+		ret[idx] = retSnap
+	}
+	return ret, nil
 }
 
 func (s *SnapshotManager) dbSnapToInternalSnap(snap db.Snapshot) internal.Snapshot {
@@ -241,5 +338,19 @@ func (s *SnapshotManager) DeleteSnapshot(vmID, snapID string) error {
 		return err
 	}
 
+	return nil
+}
+
+// PurgeSnapshots deletes all snapshots for a VM.
+func (s *SnapshotManager) PurgeSnapshots(vmID string) error {
+	vm, err := s.GetVirtualMachine(vmID)
+	if err != nil {
+		return err
+	}
+	for _, snap := range vm.Snapshots {
+		if err := s.DeleteSnapshot(vmID, snap); err != nil {
+			return err
+		}
+	}
 	return nil
 }
