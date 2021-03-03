@@ -1,23 +1,37 @@
-apk add musl-dev gcc db-dev libressl-dev git libtool m4 autoconf g++ make
+# Coriolis OVM exporter
 
-git clone --depth 1 https://salsa.debian.org/debian/db5.3.git
+This service aims to augment Oracle VM with efficient incremental backup exports of virtual machine disks.
 
-cd db5.3
-cd dist && libtoolize -cfi && cd -
-cd lang/sql/sqlite && libtoolize -cfi && cd -
-cd dist && ./s_config
-cd ../
+## Compiling the binary
 
-sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' ./src/dbinc/atomic.h
+The simplest way to build the binary is to have docker installed and simply run:
 
-cd build_unix/
+```bash
+make
+```
 
+This will create a build image called ```coriolis-ovm-exporter-builder``` from the alpine golang image. This new image will have libdb recompiled using ```--enable-static```. It will then build ```coriolis-ovm-exporter``` as a statically linked binary. The resulting binary will be copied to your current working directory.
 
-../dist/configure --prefix=/usr --enable-cxx --enable-dbm --enable-compat185 --enable-stl --enable-static
+## Configuration
 
-make -j8
-make install
+The configuration file is quite simple:
 
-export GO111MODULE=auto
+```toml
+# Path on disk to the database file the exporter will use.
+db_file = "/etc/coriolis-ovm-exporter/exporter.db"
+# This is the base URL to your OVM manager
+ovm_endpoint = "https://your-ovm-api-server.example:7002"
 
-go build -ldflags="-extldflags=-static"
+[jwt]
+# Obviously, this needs to be changed :-)
+secret = "yoidthOcBauphFeykCotdidNorjAnAtGhonsabShegAtfexbavlyakPak4SletEd"
+
+[api]
+bind = "0.0.0.0"
+port = 5544
+    [api.tls]
+    # These settings are required
+    certificate = "/tmp/certs/srv-pub.pem"
+    key = "/tmp/certs/srv-key.pem"
+    ca_certificate = "/tmp/certs/ca-pub.pem"
+```
