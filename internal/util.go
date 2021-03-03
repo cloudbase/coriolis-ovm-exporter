@@ -1,12 +1,13 @@
 package internal
 
 import (
+	"coriolis-ovm-exporter/apiserver/params"
 	"fmt"
 
 	"github.com/pkg/errors"
 )
 
-func getFileExtents(filePath string) ([]Chunk, error) {
+func getFileExtents(filePath string) ([]params.Chunk, error) {
 	extents, err := GetExtents(filePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching fiemap")
@@ -16,10 +17,10 @@ func getFileExtents(filePath string) ([]Chunk, error) {
 		return nil, fmt.Errorf("failed to get extents")
 	}
 
-	ret := make([]Chunk, len(extents))
+	ret := make([]params.Chunk, len(extents))
 
 	for idx, ext := range extents {
-		ret[idx] = Chunk{
+		ret[idx] = params.Chunk{
 			Length:   ext.Length,
 			Start:    ext.Logical,
 			Physical: ext.Physical,
@@ -28,16 +29,17 @@ func getFileExtents(filePath string) ([]Chunk, error) {
 	return ret, nil
 }
 
-func squashChunks(chunks []Chunk) []Chunk {
+// SquashChunks squashes continuous chunks into one chunk.
+func SquashChunks(chunks []params.Chunk) []params.Chunk {
 	if chunks == nil || len(chunks) == 0 {
-		return []Chunk{}
+		return []params.Chunk{}
 	}
 
 	tmpLogical := chunks[0].Start
 	tmpPhysical := chunks[0].Physical
 	tmpLength := chunks[0].Length
 
-	var squashed []Chunk
+	var squashed []params.Chunk
 
 	for i := 1; i < len(chunks); i++ {
 		if (tmpLogical + tmpLength) == chunks[i].Start {
@@ -45,7 +47,7 @@ func squashChunks(chunks []Chunk) []Chunk {
 			continue
 		}
 
-		squashed = append(squashed, Chunk{
+		squashed = append(squashed, params.Chunk{
 			Start:    tmpLogical,
 			Length:   tmpLength,
 			Physical: tmpPhysical,
@@ -55,7 +57,7 @@ func squashChunks(chunks []Chunk) []Chunk {
 		tmpLength = chunks[i].Length
 	}
 
-	squashed = append(squashed, Chunk{
+	squashed = append(squashed, params.Chunk{
 		Start:    tmpLogical,
 		Length:   tmpLength,
 		Physical: tmpPhysical,
@@ -64,12 +66,12 @@ func squashChunks(chunks []Chunk) []Chunk {
 	return squashed
 }
 
-func getSquashedFileExtents(filePath string) ([]Chunk, error) {
+func getSquashedFileExtents(filePath string) ([]params.Chunk, error) {
 	chunks, err := getFileExtents(filePath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return squashChunks(chunks), nil
+	return SquashChunks(chunks), nil
 }

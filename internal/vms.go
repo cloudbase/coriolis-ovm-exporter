@@ -96,6 +96,8 @@ func (d Disk) CreateSnapshot(snapID string) (snap DiskSnapshot, err error) {
 		Repo:       d.Repo.MountPoint,
 		SnapshotID: snapID,
 		Chunks:     chunks,
+		Path:       snapFile,
+		ParentPath: d.Path,
 	}
 	return snap, nil
 }

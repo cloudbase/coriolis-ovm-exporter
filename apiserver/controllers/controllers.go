@@ -3,16 +3,18 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	"coriolis-ovm-exporter/apiserver/auth"
 	"coriolis-ovm-exporter/apiserver/params"
 	"coriolis-ovm-exporter/config"
-	"coriolis-ovm-exporter/db"
 	gErrors "coriolis-ovm-exporter/errors"
+	"coriolis-ovm-exporter/manager"
 )
 
 // NewAPIController returns a new instance of APIController
@@ -21,13 +23,13 @@ func NewAPIController(cfg *config.Config) (*APIController, error) {
 		return nil, errors.Wrap(err, "validating config")
 	}
 
-	db, err := db.NewDatabase(cfg.DBFile)
+	mgr, err := manager.NewManager(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "opening database")
 	}
 	return &APIController{
 		cfg: cfg,
-		db:  db,
+		mgr: mgr,
 	}, nil
 }
 
@@ -63,7 +65,7 @@ func handleError(w http.ResponseWriter, err error) {
 // APIController implements all API handlers.
 type APIController struct {
 	cfg *config.Config
-	db  *db.Database
+	mgr *manager.SnapshotManager
 }
 
 // LoginHandler attempts to authenticate against the OVM endpoint with the supplied credentials,
@@ -102,10 +104,28 @@ func (a *APIController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 // ListVMsHandler lists all VMs from all repositories on the system.
 func (a *APIController) ListVMsHandler(w http.ResponseWriter, r *http.Request) {
+	vms, err := a.mgr.ListVirtualMachines()
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	json.NewEncoder(w).Encode(vms)
 }
 
 // GetVMHandler gets information about a single VM.
 func (a *APIController) GetVMHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	vmInfo, err := a.mgr.GetVirtualMachine(vmID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	json.NewEncoder(w).Encode(vmInfo)
 }
 
 // ListSnapshotsHandler lists all snapshots for a VM.
@@ -116,10 +136,54 @@ func (a *APIController) ListSnapshotsHandler(w http.ResponseWriter, r *http.Requ
 // query arg diff, which allows comparison of current snapshot, with a previous snapshot.
 // The snapshot we are comparing to must exist and must be older than the current one.
 func (a *APIController) GetSnapshotHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	snapID, ok := vars["snapshotID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	squashChunksParam := r.URL.Query().Get("squashChunks")
+	var squashChunks bool
+	if squashChunksParam == "" {
+		// Default to true
+		squashChunks = true
+	} else {
+		squashChunks, _ = strconv.ParseBool(squashChunksParam)
+	}
+	snapshot, err := a.mgr.GetSnapshot(vmID, snapID, squashChunks)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	json.NewEncoder(w).Encode(snapshot)
 }
 
 // DeleteSnapshotHandler removes one snapshot associated with a VM.
 func (a *APIController) DeleteSnapshotHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	snapID, ok := vars["snapshotID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err := a.mgr.DeleteSnapshot(vmID, snapID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // PurgeSnapshotsHandler deletes all snapshots associated with a VM.
@@ -128,6 +192,20 @@ func (a *APIController) PurgeSnapshotsHandler(w http.ResponseWriter, r *http.Req
 
 // CreateSnapshotHandler creates a snapshots for a VM.
 func (a *APIController) CreateSnapshotHandler(w http.ResponseWriter, r *http.Request) {
+	// CreateSnapshot
+	vars := mux.Vars(r)
+	vmID, ok := vars["vmID"]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	snapData, err := a.mgr.CreateSnapshot(vmID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	json.NewEncoder(w).Encode(snapData)
 }
 
 // ConsumeSnapshotHandler allows the caller to download arbitrary ranges of disk data from a

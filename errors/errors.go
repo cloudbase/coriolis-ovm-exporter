@@ -16,7 +16,8 @@ var (
 	ErrInvalidSession = NewInvalidSessionError("invalid session")
 	// ErrBadRequest is returned is a malformed request is sent
 	ErrBadRequest = NewBadRequestError("invalid request")
-
+	// ErrNotImplemented returns a not implemented error.
+	ErrNotImplemented = fmt.Errorf("not implemented")
 	// ErrNoInfo is returned when no info could be found about a resource
 	ErrNoInfo = fmt.Errorf("no info available")
 )

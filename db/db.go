@@ -1,6 +1,7 @@
 package db
 
 import (
+	"coriolis-ovm-exporter/apiserver/params"
 	"time"
 
 	"github.com/asdine/storm"
@@ -44,7 +45,7 @@ func (d *Database) DBConnection() *storm.DB {
 }
 
 // CreateSnapshot creates a new snapshot object in the database.
-func (d *Database) CreateSnapshot(snapID, vmID string, disks []Disk) (Snapshot, error) {
+func (d *Database) CreateSnapshot(snapID, vmID string, disks []params.DiskSnapshot) (Snapshot, error) {
 	snap := Snapshot{
 		ID:        snapID,
 		VMID:      vmID,
@@ -86,8 +87,11 @@ func (d *Database) DeleteVMSnapshots(vmID string) error {
 // ListSnapshots lists all snapshots for a VM.
 func (d *Database) ListSnapshots(vmID string) ([]Snapshot, error) {
 	var snaps []Snapshot
-	if err := d.con.Select(q.Eq("VMID", vmID)).OrderBy("created_at").Find(&snaps); err != nil {
-		return snaps, errors.Wrap(err, "fetching chunks")
+	if err := d.con.Select(q.Eq("VMID", vmID)).OrderBy("CreatedAt").Find(&snaps); err != nil {
+		if err == storm.ErrNotFound {
+			return snaps, nil
+		}
+		return snaps, errors.Wrap(err, "fetching VM snapshots")
 	}
 
 	return snaps, nil

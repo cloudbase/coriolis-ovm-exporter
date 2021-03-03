@@ -27,9 +27,11 @@ func NewAPIRouter(han *controllers.APIController, authMiddleware auth.Middleware
 	apiRouter.Use(authMiddleware.Middleware)
 
 	// list VMs
-	apiRouter.Handle("/{vms:vms\\/?}", log(os.Stdout, http.HandlerFunc(han.ListVMsHandler))).Methods("GET")
+	apiRouter.Handle("/vms", log(os.Stdout, http.HandlerFunc(han.ListVMsHandler))).Methods("GET")
+	apiRouter.Handle("/vms/", log(os.Stdout, http.HandlerFunc(han.ListVMsHandler))).Methods("GET")
 	// get VM
 	apiRouter.Handle("/vms/{vmID}", log(os.Stdout, http.HandlerFunc(han.GetVMHandler))).Methods("GET")
+	apiRouter.Handle("/vms/{vmID}/", log(os.Stdout, http.HandlerFunc(han.GetVMHandler))).Methods("GET")
 	// list VM snapshots
 	apiRouter.Handle("/vms/{vmID}/snapshots", log(os.Stdout, http.HandlerFunc(han.ListSnapshotsHandler))).Methods("GET")
 	apiRouter.Handle("/vms/{vmID}/snapshots/", log(os.Stdout, http.HandlerFunc(han.ListSnapshotsHandler))).Methods("GET")

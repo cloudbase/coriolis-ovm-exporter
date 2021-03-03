@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"fmt"
+	"coriolis-ovm-exporter/apiserver/params"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,26 +15,14 @@ const (
 	SnapshotDir = "CoriolisSnapshots"
 )
 
-// Chunk holds information about an extent.
-type Chunk struct {
-	Start  uint64
-	Length uint64
-	// Physical is the physical location on disk where this chunk resides.
-	// When creating a reflink copy (copy-on-write) of a file,
-	// if bytes get written to an extent in the original file, the
-	// filesystem will write those bytes to a different physical location
-	// on disk, ensuring that each copy of the file has it's own private
-	// copy of the extent. When comparing differences between two copies
-	// we'll be looking at the physical locations of the extents.
-	Physical uint64
-}
-
 // DiskSnapshot represents a snapshot of a VM disk.
 type DiskSnapshot struct {
 	Name       string
 	Repo       string
 	SnapshotID string
-	Chunks     []Chunk
+	Path       string
+	ParentPath string
+	Chunks     []params.Chunk
 }
 
 // DeleteSnapshot deletes files associated with this disk snapshot.
@@ -85,9 +73,4 @@ func (s Snapshot) Delete() error {
 	}
 
 	return nil
-}
-
-// GetSnapshot gets a new Snapshot instance from an ID.
-func GetSnapshot(snapID string) (Snapshot, error) {
-	return Snapshot{}, fmt.Errorf("not implemented")
 }
