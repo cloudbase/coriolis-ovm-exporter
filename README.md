@@ -23,6 +23,10 @@ db_file = "/etc/coriolis-ovm-exporter/exporter.db"
 # This is the base URL to your OVM manager. We will use this to
 # authenticate login requests. Make sure this matches the manager
 # that this node belongs to.
+#
+# NOTE: Setting this is *OPTIONAL*. If this setting is omitted, the
+# exporter will attempt to fetch the manager IP from the ovs-agent
+# database.
 ovm_endpoint = "https://your-ovm-api-server.example:7002"
 
 [jwt]

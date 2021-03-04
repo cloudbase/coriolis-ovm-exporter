@@ -21,6 +21,10 @@ const (
 	// RepositoryDB is the name of the repository database
 	// inside DatabaseDir.
 	RepositoryDB = "repository"
+
+	// ServerDB is the database that contains the state of this
+	// node, and information about the manager node.
+	ServerDB = "server"
 )
 
 // Repo holds information about a single repository
@@ -61,6 +65,52 @@ func (r *Repo) Meta() (map[string]RepoMetaItem, error) {
 	return repoMeta, nil
 }
 
+// GetManagerIPFromDB attempts to fetch the OVM manager IP from the
+// ovs-agent database.
+func GetManagerIPFromDB() (string, error) {
+	// TODO: deduplicate this.
+	dbFile := filepath.Join(DatabaseDir, ServerDB)
+	if _, err := os.Stat(dbFile); err != nil {
+		return "", errors.Wrap(err, "looking up server file")
+	}
+
+	db, err := berkeleydb.NewDB()
+	if err != nil {
+		return "", fmt.Errorf("unexpected failure of CreateDB %s", err)
+	}
+
+	err = db.Open(dbFile, berkeleydb.DbHash, berkeleydb.DbRdOnly)
+	if err != nil {
+		return "", fmt.Errorf("Could not open %s. Error code %s", dbFile, err)
+
+	}
+	defer db.Close()
+
+	cursor, err := db.Cursor()
+	if err != nil {
+		return "", fmt.Errorf("failed to create cursor: %s", err)
+	}
+
+	for {
+		k, v, err := cursor.GetNext()
+		if err != nil {
+			break
+		}
+		if string(k) != "manager_ip" {
+			continue
+		}
+		var mgrIP string
+		reader := bytes.NewReader(v)
+		err = stalecucumber.UnpackInto(&mgrIP).From(stalecucumber.Unpickle(reader))
+		if err != nil {
+			return "", errors.Wrap(err, "decoding manager_ip")
+		}
+		return mgrIP, nil
+	}
+
+	return "", fmt.Errorf("could not find manager IP")
+}
+
 // ParseRepos returns a list of repositories configured
 // on this compute node.
 func ParseRepos() ([]Repo, error) {
@@ -78,7 +128,7 @@ func ParseRepos() ([]Repo, error) {
 
 	err = db.Open(repoFile, berkeleydb.DbHash, berkeleydb.DbRdOnly)
 	if err != nil {
-		return nil, fmt.Errorf("Could not open test_db.db. Error code %s", err)
+		return nil, fmt.Errorf("Could not open %s. Error code %s", repoFile, err)
 
 	}
 	defer db.Close()

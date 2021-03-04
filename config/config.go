@@ -1,6 +1,7 @@
 package config
 
 import (
+	"coriolis-ovm-exporter/internal"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -26,6 +27,9 @@ const (
 	// DefaultJWTTTL is the default duration in seconds a JWT token
 	// will be valid. Default 7 days.
 	DefaultJWTTTL time.Duration = 168 * time.Hour
+
+	// DefaultManagerPort is the port of the OVM manager node.
+	DefaultManagerPort = 7002
 )
 
 // ParseConfig parses the file passed in as cfgFile and returns
@@ -42,6 +46,14 @@ func ParseConfig(cfgFile string) (*Config, error) {
 
 	if config.JWTAuth.TimeToLive.Duration == 0 {
 		config.JWTAuth.TimeToLive.Duration = DefaultJWTTTL
+	}
+
+	if config.OVMEndpoint == "" {
+		endpoint, err := internal.GetManagerIPFromDB()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get ovm endpoint from db and no ovm_endpoint config option was specified")
+		}
+		config.OVMEndpoint = fmt.Sprintf("https://%s:%d", endpoint, DefaultManagerPort)
 	}
 
 	if err := config.Validate(); err != nil {
