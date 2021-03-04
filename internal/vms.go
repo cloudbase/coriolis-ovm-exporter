@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,7 +49,6 @@ type Disk struct {
 // this disk can be reflinked.
 func (d Disk) CanClone() bool {
 	if d.Repo.Filesystem != "ocfs2" {
-		log.Printf("Filesystem is not ocfs2: %s", d.Repo.Filesystem)
 		return false
 	}
 
@@ -73,7 +71,6 @@ func (d Disk) CreateSnapshot(snapID string) (snap DiskSnapshot, err error) {
 		if os.IsNotExist(err) == false {
 			return DiskSnapshot{}, fmt.Errorf("failed to stat %s", snapshotDir)
 		}
-		log.Printf("Creating snapshot dir: %s", snapshotDir)
 		if err := os.MkdirAll(snapshotDir, 00750); err != nil {
 			return DiskSnapshot{}, fmt.Errorf("failed to create %s", snapshotDir)
 		}
@@ -95,8 +92,6 @@ func (d Disk) CreateSnapshot(snapID string) (snap DiskSnapshot, err error) {
 			}
 		}
 	}()
-
-	log.Printf("Creating snap of %s to %s", d.Path, snapFile)
 
 	if err := IOctlOCFS2Reflink(d.Path, snapFile); err != nil {
 		return DiskSnapshot{}, errors.Wrap(err, "creating reflink")
@@ -203,14 +198,12 @@ func (v VMConfig) Disks() ([]Disk, error) {
 	for _, val := range v.DiskArray {
 		schemaSplit := strings.SplitN(val, ":", 2)
 		if len(schemaSplit) != 2 || schemaSplit[0] != "file" {
-			log.Printf("ignoring non file disk: %s", val)
 			continue
 		}
 
 		details := strings.Split(schemaSplit[1], ",")
 		if len(details) != 3 {
 			// expecting path,device_name,mode
-			log.Printf("unexpected number of values (%d) for %s (expected 3)", len(details), val)
 			continue
 		}
 
@@ -224,9 +217,7 @@ func (v VMConfig) Disks() ([]Disk, error) {
 
 		for _, repo := range repos {
 			meta, err := repo.Meta()
-			if err != nil {
-				log.Printf("failed to find repo metadata: %q", err)
-			} else {
+			if err == nil {
 				if diskMeta, ok := meta[dsk.Name]; ok {
 					dsk.ObjectType = diskMeta.ObjectType
 					dsk.Repo = repo

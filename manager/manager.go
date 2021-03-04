@@ -164,7 +164,6 @@ func (s *SnapshotManager) CreateSnapshot(vmid string) (snap params.VMSnapshot, e
 	snapshotParams := s.snapshotToParamsSnapshot(snapshot)
 	_, err = s.db.CreateSnapshot(snapshot.SnapshotID, vmid, snapshotParams.Disks)
 	if err != nil {
-		log.Printf("failed to save to db: %q", err)
 		return params.VMSnapshot{}, err
 	}
 	return snapshotParams, nil

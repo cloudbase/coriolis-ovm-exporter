@@ -299,3 +299,13 @@ func (a *APIController) ConsumeSnapshotHandler(w http.ResponseWriter, r *http.Re
 	defer fp.Close()
 	http.ServeContent(w, r, disk.Path, time.Time{}, fp)
 }
+
+// NotFoundHandler is returned when an invalid URL is acccessed
+func (a *APIController) NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	apiErr := params.APIErrorResponse{
+		Details: "Resource not found",
+		Error:   "Not found",
+	}
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(apiErr)
+}

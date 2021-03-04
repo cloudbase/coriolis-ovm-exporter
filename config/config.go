@@ -46,6 +46,9 @@ const (
 
 	// DefaultManagerPort is the port of the OVM manager node.
 	DefaultManagerPort = 7002
+
+	// DefaultLogFile is the default path for the service log file.
+	DefaultLogFile = "/var/log/coriolis-ovm-exporter/exporter.log"
 )
 
 // ParseConfig parses the file passed in as cfgFile and returns
@@ -91,6 +94,9 @@ type Config struct {
 
 	// JWTAuth is the jwt config.
 	JWTAuth JWTAuth `toml:"jwt"`
+
+	// LogFile is the location of the log file
+	LogFile string `toml:"log_file"`
 }
 
 // Validate validates the config options
