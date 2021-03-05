@@ -37,6 +37,8 @@ func NewAPIRouter(han *controllers.APIController, authMiddleware auth.Middleware
 	// Login
 	authRouter := apiSubRouter.PathPrefix("/auth").Subrouter()
 	authRouter.Handle("/{login:login\\/?}", log(logWriter, http.HandlerFunc(han.LoginHandler))).Methods("POST")
+	// Not found handler
+	authRouter.PathPrefix("/").Handler(log(logWriter, http.HandlerFunc(han.NotFoundHandler)))
 
 	// Private API endpoints
 	apiRouter := apiSubRouter.PathPrefix("").Subrouter()
