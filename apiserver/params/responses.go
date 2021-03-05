@@ -80,18 +80,20 @@ type VMSnapshot struct {
 
 // Disk holds information of a single disk attached to a VM.
 type Disk struct {
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	DeviceName string `json:"device_name"`
-	Mode       string `json:"mode"`
+	Name               string `json:"name"`
+	Path               string `json:"path"`
+	DeviceName         string `json:"device_name"`
+	SnapshotCompatible bool   `json:"snapshot_compatible"`
+	Mode               string `json:"mode"`
 }
 
 // VirtualMachine holds information about a single VM.
 type VirtualMachine struct {
-	FriendlyName string `json:"friendly_name"`
-	Name         string `json:"name"`
-	UUID         string `json:"uuid"`
-	Disks        []Disk `json:"disks"`
+	FriendlyName       string `json:"friendly_name"`
+	Name               string `json:"name"`
+	UUID               string `json:"uuid"`
+	Disks              []Disk `json:"disks"`
+	SnapshotCompatible bool   `json:"snapshot_compatible"`
 	// Snapshots is a list of snapshot IDs as fetched
 	// from the database
 	Snapshots []string `json:"snapshots"`

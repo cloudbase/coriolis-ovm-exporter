@@ -65,10 +65,11 @@ func (s *SnapshotManager) vmToParamsVirtualMachine(vm internal.VMConfig) (params
 	disks := make([]params.Disk, len(vmDisks))
 	for dIdx, disk := range vmDisks {
 		disks[dIdx] = params.Disk{
-			Name:       disk.Name,
-			Path:       disk.Path,
-			DeviceName: disk.DeviceName,
-			Mode:       disk.Mode,
+			Name:               disk.Name,
+			Path:               disk.Path,
+			DeviceName:         disk.DeviceName,
+			SnapshotCompatible: disk.CanClone(),
+			Mode:               disk.Mode,
 		}
 	}
 
@@ -77,11 +78,12 @@ func (s *SnapshotManager) vmToParamsVirtualMachine(vm internal.VMConfig) (params
 		return params.VirtualMachine{}, errors.Wrap(err, "fetching snapshots")
 	}
 	return params.VirtualMachine{
-		Name:         vm.Name,
-		FriendlyName: vm.OVMSimpleName,
-		UUID:         vm.UUID,
-		Disks:        disks,
-		Snapshots:    snapshots,
+		Name:               vm.Name,
+		FriendlyName:       vm.OVMSimpleName,
+		UUID:               vm.UUID,
+		Disks:              disks,
+		SnapshotCompatible: vm.CanClone(),
+		Snapshots:          snapshots,
 	}, nil
 }
 
