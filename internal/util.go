@@ -17,10 +17,11 @@
 package internal
 
 import (
-	"coriolis-ovm-exporter/apiserver/params"
 	"fmt"
 
 	"github.com/pkg/errors"
+
+	"coriolis-ovm-exporter/apiserver/params"
 )
 
 func getFileExtents(filePath string) ([]params.Chunk, error) {

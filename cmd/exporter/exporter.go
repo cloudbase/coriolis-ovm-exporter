@@ -28,6 +28,7 @@ import (
 	"coriolis-ovm-exporter/apiserver/controllers"
 	"coriolis-ovm-exporter/apiserver/routers"
 	"coriolis-ovm-exporter/config"
+	"coriolis-ovm-exporter/util"
 )
 
 var (
@@ -45,6 +46,13 @@ func main() {
 		log.Fatalf("failed to parse config %s: %q", *conf, err)
 	}
 
+	logWriter, err := util.GetLoggingWriter(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.SetOutput(logWriter)
+
 	controller, err := controllers.NewAPIController(cfg)
 	if err != nil {
 		log.Fatalf("failed to create controller: %q", err)
@@ -54,7 +62,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get authentication middleware: %q", err)
 	}
-	router := routers.NewAPIRouter(controller, jwt)
+	router := routers.NewAPIRouter(controller, jwt, logWriter)
 
 	tlsCfg, err := cfg.APIServer.TLSConfig.TLSConfig()
 	if err != nil {
