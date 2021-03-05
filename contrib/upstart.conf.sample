@@ -1,0 +1,9 @@
+# Upstart file for Coriolis OVM exporter
+
+respawn
+respawn limit 15 5
+
+start on runlevel [2345]
+stop on runlevel [06]
+
+exec /usr/local/bin/coriolis-ovm-exporter -config /etc/coriolis-ovm-exporter/config.toml
