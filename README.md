@@ -88,9 +88,11 @@ curl -s -k -X GET -H 'Accept: application/json' \
         "name": "0004fb000012000005bcf25e906ce843.img",
         "path": "/OVS/Repositories/0004fb00000300006a09d4e1065041cb/VirtualDisks/0004fb000012000005bcf25e906ce843.img",
         "device_name": "xvda",
+        "snapshot_compatible": true,
         "mode": "w"
       }
     ],
+    "snapshot_compatible": true,
     "snapshots": [
       "9633d114-8270-41eb-bffc-67cc342957d9",
       "381ba26b-4a62-4baf-a450-af120ceddcbf"
@@ -106,15 +108,18 @@ curl -s -k -X GET -H 'Accept: application/json' \
         "name": "0004fb0000120000510f357e96bd5290.img",
         "path": "/OVS/Repositories/0004fb00000300009d120c269f2d8e1e/VirtualDisks/0004fb0000120000510f357e96bd5290.img",
         "device_name": "xvda",
+        "snapshot_compatible": false,
         "mode": "w"
       },
       {
         "name": "0004fb0000150000aae1c593a64762c2.iso",
         "path": "/OVS/Repositories/0004fb0000030000d42b204197e41e75/ISOs/0004fb0000150000aae1c593a64762c2.iso",
         "device_name": "xvdb:cdrom",
+        "snapshot_compatible": false,
         "mode": "r"
       }
     ],
+    "snapshot_compatible": false,
     "snapshots": []
   }
 ]
@@ -141,9 +146,11 @@ curl -s -k -X GET -H 'Accept: application/json' \
       "name": "0004fb000012000005bcf25e906ce843.img",
       "path": "/OVS/Repositories/0004fb00000300006a09d4e1065041cb/VirtualDisks/0004fb000012000005bcf25e906ce843.img",
       "device_name": "xvda",
+      "snapshot_compatible": true,
       "mode": "w"
     }
   ],
+  "snapshot_compatible": true,
   "snapshots": [
     "9633d114-8270-41eb-bffc-67cc342957d9",
     "381ba26b-4a62-4baf-a450-af120ceddcbf"
@@ -234,6 +241,10 @@ Query parameters:
 | compareTo | string | true | A snapshot ID previous to this one. If set, the "chunks" field will only hold extents that have changed from the snapshot specified in "compareTo". |
 
 ### Create snapshot
+
+To create a snapshot, the virtual machine must be hosted on an repository backed by the ```OCFS2``` filesystem. Coriolis OVM exporter creates copy on write snapshots of VM disks, which requires support from the backing filesystem. Currently only ```OCFS2``` is supported, with plans to add support for other filesystems such as ```xfs```, ```NFS``` (version 4.2 and upwards), ```CIFS```, etc.
+
+If a VM has any disk on a repository that is not supported, the request will fail. You can check if the VM is snapshot-able by inspecting the ```snapshot_compatible``` field, when listing VM details. 
 
 ```
 POST /api/v1/vms/{vmID}/snapshots/
