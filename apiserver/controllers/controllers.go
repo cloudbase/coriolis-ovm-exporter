@@ -124,6 +124,7 @@ func (a *APIController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 func (a *APIController) ListVMsHandler(w http.ResponseWriter, r *http.Request) {
 	vms, err := a.mgr.ListVirtualMachines()
 	if err != nil {
+		log.Printf("failed to list virtual machines: %q", err)
 		handleError(w, err)
 		return
 	}
@@ -140,6 +141,7 @@ func (a *APIController) GetVMHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	vmInfo, err := a.mgr.GetVirtualMachine(vmID)
 	if err != nil {
+		log.Printf("failed to get virtual machines: %q", err)
 		handleError(w, err)
 		return
 	}
@@ -157,6 +159,7 @@ func (a *APIController) ListSnapshotsHandler(w http.ResponseWriter, r *http.Requ
 
 	snaps, err := a.mgr.ListSnapshots(vmID)
 	if err != nil {
+		log.Printf("failed to list snapshots: %q", err)
 		handleError(w, err)
 		return
 	}
@@ -191,6 +194,7 @@ func (a *APIController) GetSnapshotHandler(w http.ResponseWriter, r *http.Reques
 	compareTo := r.URL.Query().Get("compareTo")
 	snapshot, err := a.mgr.GetSnapshot(vmID, snapID, compareTo, squashChunks)
 	if err != nil {
+		log.Printf("failed to get snapshot: %q", err)
 		handleError(w, err)
 		return
 	}
@@ -213,6 +217,7 @@ func (a *APIController) DeleteSnapshotHandler(w http.ResponseWriter, r *http.Req
 
 	err := a.mgr.DeleteSnapshot(vmID, snapID)
 	if err != nil {
+		log.Printf("failed to delete snapshot: %q", err)
 		handleError(w, err)
 		return
 	}
@@ -228,6 +233,7 @@ func (a *APIController) PurgeSnapshotsHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if err := a.mgr.PurgeSnapshots(vmID); err != nil {
+		log.Printf("failed to purge snapshots: %q", err)
 		handleError(w, err)
 	}
 	w.WriteHeader(http.StatusOK)
@@ -245,6 +251,7 @@ func (a *APIController) CreateSnapshotHandler(w http.ResponseWriter, r *http.Req
 
 	snapData, err := a.mgr.CreateSnapshot(vmID)
 	if err != nil {
+		log.Printf("failed to create snapshot: %q", err)
 		handleError(w, err)
 		return
 	}
@@ -274,6 +281,7 @@ func (a *APIController) ConsumeSnapshotHandler(w http.ResponseWriter, r *http.Re
 
 	snapshot, err := a.mgr.GetSnapshot(vmID, snapID, "", false)
 	if err != nil {
+		log.Printf("failed to get snapshot: %q", err)
 		handleError(w, err)
 		return
 	}

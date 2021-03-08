@@ -27,6 +27,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+
+	gErrors "coriolis-ovm-exporter/errors"
 )
 
 const (
@@ -63,7 +65,7 @@ func (d Disk) CanClone() bool {
 // a DiskSnapshot object.
 func (d Disk) CreateSnapshot(snapID string) (snap DiskSnapshot, err error) {
 	if d.CanClone() == false {
-		return DiskSnapshot{}, fmt.Errorf("repository of %s does not support reflink cloning", d.Name)
+		return DiskSnapshot{}, gErrors.NewBadRequestError("repository of %s does not support reflink cloning", d.Name)
 	}
 
 	snapshotDir := filepath.Join(d.Repo.MountPoint, SnapshotDir, snapID)
@@ -132,7 +134,7 @@ func (v VMConfig) CreateSnapshot(shutdownVM bool) (snapshot Snapshot, err error)
 	snapID := uuid.NewString()
 
 	if v.CanClone() == false {
-		err = fmt.Errorf("VM does not support reflink cloning")
+		err = gErrors.NewBadRequestError("VM does not support reflink cloning")
 		return
 	}
 

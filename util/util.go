@@ -1,13 +1,14 @@
 package util
 
 import (
-	"coriolis-ovm-exporter/config"
 	"fmt"
 	"io"
 	"os"
 	"path"
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+
+	"coriolis-ovm-exporter/config"
 )
 
 // GetLoggingWriter returns a new io.Writer suitable for logging.
