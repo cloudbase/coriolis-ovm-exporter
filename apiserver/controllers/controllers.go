@@ -72,6 +72,7 @@ func handleError(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusConflict)
 		apiErr.Error = "Conflict"
 	default:
+		log.Printf("Unhandled error: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		apiErr.Error = "Server error"
 	}

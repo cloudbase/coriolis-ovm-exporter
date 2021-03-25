@@ -17,7 +17,6 @@
 package internal
 
 import (
-	"fmt"
 	"os"
 	"syscall"
 	"unsafe"
@@ -38,15 +37,15 @@ const (
 
 // IOctlOCFS2Reflink creates a reflinked copy (copy-on-write) on an OCFS2
 func IOctlOCFS2Reflink(src, dst string) error {
-	srcCopy := fmt.Sprintf(src)
-	dstCopy := fmt.Sprintf(dst)
+	srcCopy := []byte(src)
+	dstCopy := []byte(dst)
 	params := reflinkArgs{
 		OldPath:  *(*uint64)(unsafe.Pointer(&srcCopy)),
 		NewPath:  *(*uint64)(unsafe.Pointer(&dstCopy)),
 		Preserve: 1,
 	}
 
-	fd, err := os.Open(srcCopy)
+	fd, err := os.Open(src)
 	if err != nil {
 		return errors.Wrap(err, "opening file")
 	}
