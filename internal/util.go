@@ -17,8 +17,6 @@
 package internal
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 
 	"coriolis-ovm-exporter/apiserver/params"
@@ -31,7 +29,9 @@ func getFileExtents(filePath string) ([]params.Chunk, error) {
 	}
 
 	if len(extents) == 0 {
-		return nil, fmt.Errorf("failed to get extents")
+		// This is a thinly provisioned disk, with nothing written
+		// inside it.
+		return []params.Chunk{}, nil
 	}
 
 	ret := make([]params.Chunk, len(extents))
