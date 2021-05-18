@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -32,11 +33,18 @@ import (
 )
 
 var (
-	conf = flag.String("config", config.DefaultConfigFile, "exporter config file")
+	conf    = flag.String("config", config.DefaultConfigFile, "exporter config file")
+	version = flag.Bool("version", false, "prints version")
 )
+
+var Version string
 
 func main() {
 	flag.Parse()
+	if *version {
+		fmt.Println(Version)
+		return
+	}
 	stop := make(chan os.Signal)
 	signal.Notify(stop, syscall.SIGTERM)
 	signal.Notify(stop, syscall.SIGINT)

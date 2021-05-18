@@ -7,8 +7,8 @@ Type=simple
 ExecStart=/usr/local/bin/coriolis-ovm-exporter -config /etc/coriolis-ovm-exporter/config.toml
 Restart=always
 RestartSec=5s
-# Change this to the user you want the wallet
-# daemon to run under
+# Change this to the user you want the coriolis
+# ovm exporter daemon to run under.
 User=root
 
 [Install]
